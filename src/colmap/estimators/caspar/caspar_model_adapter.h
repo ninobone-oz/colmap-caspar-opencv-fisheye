@@ -929,7 +929,7 @@ class PinholeAdapter : public ICasparModelAdapter {
 class OpenCVAdapter : public ICasparModelAdapter {
  public:
   CameraModelId ModelId() const override {
-    return CameraModelId::kOpenCV;
+    return CameraModelId::kOpenCVFisheye;
   }
   // OpenCV: params = [fx, fy, cx, cy, k1, k2, p1, p2]
   // focal_and_extra = [fx, fy, k1, k2, p1, p2]  (non-contiguous in params array)
@@ -1329,7 +1329,7 @@ inline std::unique_ptr<ICasparModelAdapter> CreateCasparAdapter(
       return std::make_unique<SimpleRadialAdapter>();
     case CameraModelId::kPinhole:
       return std::make_unique<PinholeAdapter>();
-    case CameraModelId::kOpenCV:
+    case CameraModelId::kOpenCVFisheye:
       return std::make_unique<OpenCVAdapter>();
     default:
       return nullptr;

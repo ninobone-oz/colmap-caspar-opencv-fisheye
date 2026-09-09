@@ -1,22 +1,22 @@
+#include "kernel_OpenCVPose_start_w.h"
+#include "memops.cuh"
 #include <cooperative_groups.h>
 #include <cooperative_groups/details/partitioning.h>
 #include <cooperative_groups/memcpy_async.h>
 #include <cooperative_groups/reduce.h>
 #include <cuda_runtime.h>
 
-#include "kernel_OpenCVPose_start_w.h"
-#include "memops.cuh"
-
 namespace cg = cooperative_groups;
 
 namespace caspar {
 
 __global__ void __launch_bounds__(1024, 1)
-    OpenCVPoseStartWKernel(float *OpenCVPose_precond_diag,
+    OpenCVPoseStartWKernel(float* OpenCVPose_precond_diag,
                            unsigned int OpenCVPose_precond_diag_num_alloc,
-                           const float *const diag, float *OpenCVPose_p,
+                           const float* const diag,
+                           float* OpenCVPose_p,
                            unsigned int OpenCVPose_p_num_alloc,
-                           float *out_OpenCVPose_w,
+                           float* out_OpenCVPose_w,
                            unsigned int out_OpenCVPose_w_num_alloc,
                            size_t problem_size) {
   const int global_thread_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -27,18 +27,26 @@ __global__ void __launch_bounds__(1024, 1)
   if (global_thread_idx < problem_size) {
     ReadIdx4<1024, float, float, float4>(OpenCVPose_precond_diag,
                                          0 * OpenCVPose_precond_diag_num_alloc,
-                                         global_thread_idx, r0, r1, r2, r3);
+                                         global_thread_idx,
+                                         r0,
+                                         r1,
+                                         r2,
+                                         r3);
   };
-  LoadUnique<1, float, float>(diag, 0, (float *)inout_shared);
+  LoadUnique<1, float, float>(diag, 0, (float*)inout_shared);
   if (global_thread_idx < problem_size) {
-    ReadShared1<float>((float *)inout_shared, 0, r4);
+    ReadShared1<float>((float*)inout_shared, 0, r4);
   };
   __syncthreads();
   if (global_thread_idx < problem_size) {
     r0 = r0 * r4;
     ReadIdx4<1024, float, float, float4>(OpenCVPose_p,
                                          0 * OpenCVPose_p_num_alloc,
-                                         global_thread_idx, r5, r6, r7, r8);
+                                         global_thread_idx,
+                                         r5,
+                                         r6,
+                                         r7,
+                                         r8);
     r0 = r0 * r5;
     r1 = r1 * r4;
     r1 = r1 * r6;
@@ -48,10 +56,16 @@ __global__ void __launch_bounds__(1024, 1)
     r3 = r3 * r8;
     WriteIdx4<1024, float, float, float4>(out_OpenCVPose_w,
                                           0 * out_OpenCVPose_w_num_alloc,
-                                          global_thread_idx, r0, r1, r2, r3);
+                                          global_thread_idx,
+                                          r0,
+                                          r1,
+                                          r2,
+                                          r3);
     ReadIdx2<1024, float, float, float2>(OpenCVPose_precond_diag,
                                          4 * OpenCVPose_precond_diag_num_alloc,
-                                         global_thread_idx, r3, r2);
+                                         global_thread_idx,
+                                         r3,
+                                         r2);
     r3 = r3 * r4;
     ReadIdx2<1024, float, float, float2>(
         OpenCVPose_p, 4 * OpenCVPose_p_num_alloc, global_thread_idx, r1, r0);
@@ -60,27 +74,33 @@ __global__ void __launch_bounds__(1024, 1)
     r4 = r4 * r0;
     WriteIdx2<1024, float, float, float2>(out_OpenCVPose_w,
                                           4 * out_OpenCVPose_w_num_alloc,
-                                          global_thread_idx, r3, r4);
+                                          global_thread_idx,
+                                          r3,
+                                          r4);
   };
 }
 
-void OpenCVPoseStartW(float *OpenCVPose_precond_diag,
+void OpenCVPoseStartW(float* OpenCVPose_precond_diag,
                       unsigned int OpenCVPose_precond_diag_num_alloc,
-                      const float *const diag, float *OpenCVPose_p,
+                      const float* const diag,
+                      float* OpenCVPose_p,
                       unsigned int OpenCVPose_p_num_alloc,
-                      float *out_OpenCVPose_w,
+                      float* out_OpenCVPose_w,
                       unsigned int out_OpenCVPose_w_num_alloc,
                       size_t problem_size) {
-
   if (problem_size == 0) {
     return;
   }
 
   const int n_blocks = (problem_size + 1024 - 1) / 1024;
-  OpenCVPoseStartWKernel<<<n_blocks, 1024>>>(
-      OpenCVPose_precond_diag, OpenCVPose_precond_diag_num_alloc, diag,
-      OpenCVPose_p, OpenCVPose_p_num_alloc, out_OpenCVPose_w,
-      out_OpenCVPose_w_num_alloc, problem_size);
+  OpenCVPoseStartWKernel<<<n_blocks, 1024>>>(OpenCVPose_precond_diag,
+                                             OpenCVPose_precond_diag_num_alloc,
+                                             diag,
+                                             OpenCVPose_p,
+                                             OpenCVPose_p_num_alloc,
+                                             out_OpenCVPose_w,
+                                             out_OpenCVPose_w_num_alloc,
+                                             problem_size);
 }
 
-} // namespace caspar
+}  // namespace caspar

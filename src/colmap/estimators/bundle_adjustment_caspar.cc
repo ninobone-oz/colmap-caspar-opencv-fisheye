@@ -881,7 +881,7 @@ class CasparBundleAdjuster : public BundleAdjuster {
         it != num_poses_per_model_.end()) {
       sz.num_pinhole_poses = it->second;
     }
-    if (auto it = num_poses_per_model_.find(CameraModelId::kOpenCV);
+    if (auto it = num_poses_per_model_.find(CameraModelId::kOpenCVFisheye);
         it != num_poses_per_model_.end()) {
       sz.num_opencv_poses = it->second;
     }
@@ -904,9 +904,9 @@ class CasparBundleAdjuster : public BundleAdjuster {
       adapters_.at(CameraModelId::kPinhole)
           ->FillSizing(sz, *md, sz.num_pinhole_calibs);
     }
-    if (const ModelData* md = get_md(CameraModelId::kOpenCV)) {
-      sz.num_opencv_calibs = get_n(CameraModelId::kOpenCV);
-      adapters_.at(CameraModelId::kOpenCV)
+    if (const ModelData* md = get_md(CameraModelId::kOpenCVFisheye)) {
+      sz.num_opencv_calibs = get_n(CameraModelId::kOpenCVFisheye);
+      adapters_.at(CameraModelId::kOpenCVFisheye)
           ->FillSizing(sz, *md, sz.num_opencv_calibs);
     }
     return sz;
@@ -975,6 +975,49 @@ class CasparBundleAdjuster : public BundleAdjuster {
 
     auto summary = CasparBundleAdjustmentSummary::Create(result);
     summary->num_residuals = ComputeTotalResiduals();
+
+    if (options_.print_summary || VLOG_IS_ON(1)) {
+        std::ostringstream log;
+        log << "Bundle adjustment report" << '\n';
+        log << std::right << std::setw(16) << "Residuals : ";
+        log << std::left << summary->num_residuals << '\n';
+
+        log << std::right << std::setw(16) << "Iterations : ";
+        log << std::left  << result.iteration_count << '\n';
+
+        log << std::right << std::setw(16) << "Time : ";
+        log << std::left << result.runtime << " [s]\n";
+
+        log << std::right << std::setw(16) << "Initial cost : ";
+        log << std::right << std::setprecision(6)
+            << std::sqrt(result.initial_score / summary->num_residuals)
+            << " [px]\n";
+
+        log << std::right << std::setw(16) << "Final cost : ";
+        log << std::right << std::setprecision(6)
+            << std::sqrt(result.final_score / summary->num_residuals)
+            << " [px]\n";
+
+        log << std::right << std::setw(16) << "Termination : ";
+        switch (result.exit_reason) {
+        case caspar::ExitReason::CONVERGED_DIAG_EXIT:
+            log << "CONVERGED_DIAG_EXIT\n";
+            break;
+        case caspar::ExitReason::CONVERGED_SCORE_THRESHOLD:
+            log << "CONVERGED_SCORE_THRESHOLD\n";
+            break;
+        case caspar::ExitReason::MAX_ITERATIONS:
+            log << "MAX_ITERATIONS:\n";
+            break;
+        default:
+            log << "FAILURE:\n";
+        }
+        log << "\n\n";
+        
+        LOG(INFO) << log.str();
+    }
+    
+    
     return summary;
   }
 

@@ -1,21 +1,26 @@
+#include "kernel_OpenCVCalib_normalize.h"
+#include "memops.cuh"
 #include <cooperative_groups.h>
 #include <cooperative_groups/details/partitioning.h>
 #include <cooperative_groups/memcpy_async.h>
 #include <cooperative_groups/reduce.h>
 #include <cuda_runtime.h>
 
-#include "kernel_OpenCVCalib_normalize.h"
-#include "memops.cuh"
-
 namespace cg = cooperative_groups;
 
 namespace caspar {
 
-__global__ void __launch_bounds__(1024, 1) OpenCVCalibNormalizeKernel(
-    float *precond_diag, unsigned int precond_diag_num_alloc,
-    float *precond_tril, unsigned int precond_tril_num_alloc, float *njtr,
-    unsigned int njtr_num_alloc, const float *const diag, float *out_normalized,
-    unsigned int out_normalized_num_alloc, size_t problem_size) {
+__global__ void __launch_bounds__(1024, 1)
+    OpenCVCalibNormalizeKernel(float* precond_diag,
+                               unsigned int precond_diag_num_alloc,
+                               float* precond_tril,
+                               unsigned int precond_tril_num_alloc,
+                               float* njtr,
+                               unsigned int njtr_num_alloc,
+                               const float* const diag,
+                               float* out_normalized,
+                               unsigned int out_normalized_num_alloc,
+                               size_t problem_size) {
   const int global_thread_idx = blockIdx.x * blockDim.x + threadIdx.x;
   __shared__ uint8_t inout_shared[4096];
 
@@ -28,20 +33,36 @@ __global__ void __launch_bounds__(1024, 1) OpenCVCalibNormalizeKernel(
     r0 = -1.00000000000000000e+00;
     ReadIdx4<1024, float, float, float4>(precond_tril,
                                          24 * precond_tril_num_alloc,
-                                         global_thread_idx, r1, r2, r3, r4);
+                                         global_thread_idx,
+                                         r1,
+                                         r2,
+                                         r3,
+                                         r4);
     ReadIdx4<1024, float, float, float4>(precond_tril,
                                          12 * precond_tril_num_alloc,
-                                         global_thread_idx, r4, r5, r6, r7);
+                                         global_thread_idx,
+                                         r4,
+                                         r5,
+                                         r6,
+                                         r7);
     ReadIdx4<1024, float, float, float4>(precond_tril,
                                          8 * precond_tril_num_alloc,
-                                         global_thread_idx, r8, r9, r10, r11);
+                                         global_thread_idx,
+                                         r8,
+                                         r9,
+                                         r10,
+                                         r11);
     ReadIdx4<1024, float, float, float4>(precond_tril,
                                          4 * precond_tril_num_alloc,
-                                         global_thread_idx, r11, r12, r13, r14);
+                                         global_thread_idx,
+                                         r11,
+                                         r12,
+                                         r13,
+                                         r14);
   };
-  LoadUnique<1, float, float>(diag, 0, (float *)inout_shared);
+  LoadUnique<1, float, float>(diag, 0, (float*)inout_shared);
   if (global_thread_idx < problem_size) {
-    ReadShared1<float>((float *)inout_shared, 0, r13);
+    ReadShared1<float>((float*)inout_shared, 0, r13);
   };
   __syncthreads();
   if (global_thread_idx < problem_size) {
@@ -49,7 +70,11 @@ __global__ void __launch_bounds__(1024, 1) OpenCVCalibNormalizeKernel(
     r15 = r13 * r15;
     ReadIdx4<1024, float, float, float4>(precond_diag,
                                          0 * precond_diag_num_alloc,
-                                         global_thread_idx, r16, r17, r18, r19);
+                                         global_thread_idx,
+                                         r16,
+                                         r17,
+                                         r18,
+                                         r19);
     r20 = 1.00000000000000000e+00;
     r20 = r13 + r20;
     r17 = fmaf(r17, r20, r15);
@@ -57,7 +82,11 @@ __global__ void __launch_bounds__(1024, 1) OpenCVCalibNormalizeKernel(
     r13 = r14 * r17;
     ReadIdx4<1024, float, float, float4>(precond_tril,
                                          0 * precond_tril_num_alloc,
-                                         global_thread_idx, r21, r22, r23, r24);
+                                         global_thread_idx,
+                                         r21,
+                                         r22,
+                                         r23,
+                                         r24);
     r21 = r22 * r11;
     r16 = fmaf(r16, r20, r15);
     r16 = 1.0 / r16;
@@ -65,7 +94,11 @@ __global__ void __launch_bounds__(1024, 1) OpenCVCalibNormalizeKernel(
     r21 = fmaf(r0, r21, r7);
     ReadIdx4<1024, float, float, float4>(precond_tril,
                                          16 * precond_tril_num_alloc,
-                                         global_thread_idx, r7, r25, r26, r27);
+                                         global_thread_idx,
+                                         r7,
+                                         r25,
+                                         r26,
+                                         r27);
     r28 = r4 * r0;
     r28 = fmaf(r13, r28, r25);
     r25 = r21 * r28;
@@ -85,7 +118,11 @@ __global__ void __launch_bounds__(1024, 1) OpenCVCalibNormalizeKernel(
     r14 = fmaf(r0, r14, r27);
     ReadIdx4<1024, float, float, float4>(precond_tril,
                                          20 * precond_tril_num_alloc,
-                                         global_thread_idx, r27, r5, r30, r31);
+                                         global_thread_idx,
+                                         r27,
+                                         r5,
+                                         r30,
+                                         r31);
     r32 = r18 * r28;
     r33 = r8 * r4;
     r33 = fmaf(r17, r33, r29 * r32);
@@ -126,7 +163,11 @@ __global__ void __launch_bounds__(1024, 1) OpenCVCalibNormalizeKernel(
     r1 = r6 * r32;
     ReadIdx4<1024, float, float, float4>(precond_diag,
                                          4 * precond_diag_num_alloc,
-                                         global_thread_idx, r30, r26, r35, r36);
+                                         global_thread_idx,
+                                         r30,
+                                         r26,
+                                         r35,
+                                         r36);
     r30 = fmaf(r30, r20, r15);
     r37 = r25 * r25;
     r38 = r34 * r34;
@@ -184,12 +225,12 @@ __global__ void __launch_bounds__(1024, 1) OpenCVCalibNormalizeKernel(
     r35 = fmaf(r0, r39, r35);
     r35 = 1.0 / r35;
     r39 = r42 * r35;
-    ReadIdx4<1024, float, float, float4>(njtr, 4 * njtr_num_alloc,
-                                         global_thread_idx, r37, r3, r1, r41);
+    ReadIdx4<1024, float, float, float4>(
+        njtr, 4 * njtr_num_alloc, global_thread_idx, r37, r3, r1, r41);
     r2 = r0 * r32;
     r43 = r0 * r34;
-    ReadIdx4<1024, float, float, float4>(njtr, 0 * njtr_num_alloc,
-                                         global_thread_idx, r44, r45, r46, r47);
+    ReadIdx4<1024, float, float, float4>(
+        njtr, 0 * njtr_num_alloc, global_thread_idx, r44, r45, r46, r47);
     r48 = r44 * r38;
     r47 = fmaf(r23, r48, r47);
     r49 = r8 * r45;
@@ -321,28 +362,46 @@ __global__ void __launch_bounds__(1024, 1) OpenCVCalibNormalizeKernel(
     r40 = fmaf(r13, r39, r40);
     WriteIdx4<1024, float, float, float4>(out_normalized,
                                           0 * out_normalized_num_alloc,
-                                          global_thread_idx, r27, r40, r2, r37);
-    WriteIdx4<1024, float, float, float4>(
-        out_normalized, 4 * out_normalized_num_alloc, global_thread_idx, r20,
-        r15, r35, r49);
+                                          global_thread_idx,
+                                          r27,
+                                          r40,
+                                          r2,
+                                          r37);
+    WriteIdx4<1024, float, float, float4>(out_normalized,
+                                          4 * out_normalized_num_alloc,
+                                          global_thread_idx,
+                                          r20,
+                                          r15,
+                                          r35,
+                                          r49);
   };
 }
 
-void OpenCVCalibNormalize(
-    float *precond_diag, unsigned int precond_diag_num_alloc,
-    float *precond_tril, unsigned int precond_tril_num_alloc, float *njtr,
-    unsigned int njtr_num_alloc, const float *const diag, float *out_normalized,
-    unsigned int out_normalized_num_alloc, size_t problem_size) {
-
+void OpenCVCalibNormalize(float* precond_diag,
+                          unsigned int precond_diag_num_alloc,
+                          float* precond_tril,
+                          unsigned int precond_tril_num_alloc,
+                          float* njtr,
+                          unsigned int njtr_num_alloc,
+                          const float* const diag,
+                          float* out_normalized,
+                          unsigned int out_normalized_num_alloc,
+                          size_t problem_size) {
   if (problem_size == 0) {
     return;
   }
 
   const int n_blocks = (problem_size + 1024 - 1) / 1024;
-  OpenCVCalibNormalizeKernel<<<n_blocks, 1024>>>(
-      precond_diag, precond_diag_num_alloc, precond_tril,
-      precond_tril_num_alloc, njtr, njtr_num_alloc, diag, out_normalized,
-      out_normalized_num_alloc, problem_size);
+  OpenCVCalibNormalizeKernel<<<n_blocks, 1024>>>(precond_diag,
+                                                 precond_diag_num_alloc,
+                                                 precond_tril,
+                                                 precond_tril_num_alloc,
+                                                 njtr,
+                                                 njtr_num_alloc,
+                                                 diag,
+                                                 out_normalized,
+                                                 out_normalized_num_alloc,
+                                                 problem_size);
 }
 
-} // namespace caspar
+}  // namespace caspar

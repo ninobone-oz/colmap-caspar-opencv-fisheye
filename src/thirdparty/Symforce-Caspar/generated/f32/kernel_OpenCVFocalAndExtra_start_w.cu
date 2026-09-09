@@ -1,23 +1,24 @@
+#include "kernel_OpenCVFocalAndExtra_start_w.h"
+#include "memops.cuh"
 #include <cooperative_groups.h>
 #include <cooperative_groups/details/partitioning.h>
 #include <cooperative_groups/memcpy_async.h>
 #include <cooperative_groups/reduce.h>
 #include <cuda_runtime.h>
 
-#include "kernel_OpenCVFocalAndExtra_start_w.h"
-#include "memops.cuh"
-
 namespace cg = cooperative_groups;
 
 namespace caspar {
 
 __global__ void __launch_bounds__(1024, 1) OpenCVFocalAndExtraStartWKernel(
-    float *OpenCVFocalAndExtra_precond_diag,
+    float* OpenCVFocalAndExtra_precond_diag,
     unsigned int OpenCVFocalAndExtra_precond_diag_num_alloc,
-    const float *const diag, float *OpenCVFocalAndExtra_p,
+    const float* const diag,
+    float* OpenCVFocalAndExtra_p,
     unsigned int OpenCVFocalAndExtra_p_num_alloc,
-    float *out_OpenCVFocalAndExtra_w,
-    unsigned int out_OpenCVFocalAndExtra_w_num_alloc, size_t problem_size) {
+    float* out_OpenCVFocalAndExtra_w,
+    unsigned int out_OpenCVFocalAndExtra_w_num_alloc,
+    size_t problem_size) {
   const int global_thread_idx = blockIdx.x * blockDim.x + threadIdx.x;
   __shared__ uint8_t inout_shared[4096];
 
@@ -26,19 +27,27 @@ __global__ void __launch_bounds__(1024, 1) OpenCVFocalAndExtraStartWKernel(
   if (global_thread_idx < problem_size) {
     ReadIdx4<1024, float, float, float4>(
         OpenCVFocalAndExtra_precond_diag,
-        0 * OpenCVFocalAndExtra_precond_diag_num_alloc, global_thread_idx, r0,
-        r1, r2, r3);
+        0 * OpenCVFocalAndExtra_precond_diag_num_alloc,
+        global_thread_idx,
+        r0,
+        r1,
+        r2,
+        r3);
   };
-  LoadUnique<1, float, float>(diag, 0, (float *)inout_shared);
+  LoadUnique<1, float, float>(diag, 0, (float*)inout_shared);
   if (global_thread_idx < problem_size) {
-    ReadShared1<float>((float *)inout_shared, 0, r4);
+    ReadShared1<float>((float*)inout_shared, 0, r4);
   };
   __syncthreads();
   if (global_thread_idx < problem_size) {
     r0 = r0 * r4;
     ReadIdx4<1024, float, float, float4>(OpenCVFocalAndExtra_p,
                                          0 * OpenCVFocalAndExtra_p_num_alloc,
-                                         global_thread_idx, r5, r6, r7, r8);
+                                         global_thread_idx,
+                                         r5,
+                                         r6,
+                                         r7,
+                                         r8);
     r0 = r0 * r5;
     r1 = r1 * r4;
     r1 = r1 * r6;
@@ -47,33 +56,46 @@ __global__ void __launch_bounds__(1024, 1) OpenCVFocalAndExtraStartWKernel(
     r3 = r3 * r4;
     r3 = r3 * r8;
     WriteIdx4<1024, float, float, float4>(
-        out_OpenCVFocalAndExtra_w, 0 * out_OpenCVFocalAndExtra_w_num_alloc,
-        global_thread_idx, r0, r1, r2, r3);
+        out_OpenCVFocalAndExtra_w,
+        0 * out_OpenCVFocalAndExtra_w_num_alloc,
+        global_thread_idx,
+        r0,
+        r1,
+        r2,
+        r3);
     ReadIdx2<1024, float, float, float2>(
         OpenCVFocalAndExtra_precond_diag,
-        4 * OpenCVFocalAndExtra_precond_diag_num_alloc, global_thread_idx, r3,
+        4 * OpenCVFocalAndExtra_precond_diag_num_alloc,
+        global_thread_idx,
+        r3,
         r2);
     r3 = r3 * r4;
     ReadIdx2<1024, float, float, float2>(OpenCVFocalAndExtra_p,
                                          4 * OpenCVFocalAndExtra_p_num_alloc,
-                                         global_thread_idx, r1, r0);
+                                         global_thread_idx,
+                                         r1,
+                                         r0);
     r3 = r3 * r1;
     r4 = r2 * r4;
     r4 = r4 * r0;
     WriteIdx2<1024, float, float, float2>(
-        out_OpenCVFocalAndExtra_w, 4 * out_OpenCVFocalAndExtra_w_num_alloc,
-        global_thread_idx, r3, r4);
+        out_OpenCVFocalAndExtra_w,
+        4 * out_OpenCVFocalAndExtra_w_num_alloc,
+        global_thread_idx,
+        r3,
+        r4);
   };
 }
 
 void OpenCVFocalAndExtraStartW(
-    float *OpenCVFocalAndExtra_precond_diag,
+    float* OpenCVFocalAndExtra_precond_diag,
     unsigned int OpenCVFocalAndExtra_precond_diag_num_alloc,
-    const float *const diag, float *OpenCVFocalAndExtra_p,
+    const float* const diag,
+    float* OpenCVFocalAndExtra_p,
     unsigned int OpenCVFocalAndExtra_p_num_alloc,
-    float *out_OpenCVFocalAndExtra_w,
-    unsigned int out_OpenCVFocalAndExtra_w_num_alloc, size_t problem_size) {
-
+    float* out_OpenCVFocalAndExtra_w,
+    unsigned int out_OpenCVFocalAndExtra_w_num_alloc,
+    size_t problem_size) {
   if (problem_size == 0) {
     return;
   }
@@ -81,9 +103,13 @@ void OpenCVFocalAndExtraStartW(
   const int n_blocks = (problem_size + 1024 - 1) / 1024;
   OpenCVFocalAndExtraStartWKernel<<<n_blocks, 1024>>>(
       OpenCVFocalAndExtra_precond_diag,
-      OpenCVFocalAndExtra_precond_diag_num_alloc, diag, OpenCVFocalAndExtra_p,
-      OpenCVFocalAndExtra_p_num_alloc, out_OpenCVFocalAndExtra_w,
-      out_OpenCVFocalAndExtra_w_num_alloc, problem_size);
+      OpenCVFocalAndExtra_precond_diag_num_alloc,
+      diag,
+      OpenCVFocalAndExtra_p,
+      OpenCVFocalAndExtra_p_num_alloc,
+      out_OpenCVFocalAndExtra_w,
+      out_OpenCVFocalAndExtra_w_num_alloc,
+      problem_size);
 }
 
-} // namespace caspar
+}  // namespace caspar

@@ -1,30 +1,35 @@
+#include "kernel_OpenCVFocalAndExtra_normalize.h"
+#include "memops.cuh"
 #include <cooperative_groups.h>
 #include <cooperative_groups/details/partitioning.h>
 #include <cooperative_groups/memcpy_async.h>
 #include <cooperative_groups/reduce.h>
 #include <cuda_runtime.h>
 
-#include "kernel_OpenCVFocalAndExtra_normalize.h"
-#include "memops.cuh"
-
 namespace cg = cooperative_groups;
 
 namespace caspar {
 
-__global__ void __launch_bounds__(1024, 1) OpenCVFocalAndExtraNormalizeKernel(
-    float *precond_diag, unsigned int precond_diag_num_alloc,
-    float *precond_tril, unsigned int precond_tril_num_alloc, float *njtr,
-    unsigned int njtr_num_alloc, const float *const diag, float *out_normalized,
-    unsigned int out_normalized_num_alloc, size_t problem_size) {
+__global__ void __launch_bounds__(1024, 1)
+    OpenCVFocalAndExtraNormalizeKernel(float* precond_diag,
+                                       unsigned int precond_diag_num_alloc,
+                                       float* precond_tril,
+                                       unsigned int precond_tril_num_alloc,
+                                       float* njtr,
+                                       unsigned int njtr_num_alloc,
+                                       const float* const diag,
+                                       float* out_normalized,
+                                       unsigned int out_normalized_num_alloc,
+                                       size_t problem_size) {
   const int global_thread_idx = blockIdx.x * blockDim.x + threadIdx.x;
   __shared__ uint8_t inout_shared[4096];
 
   float r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15,
       r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26, r27, r28, r29, r30,
       r31, r32;
-  LoadUnique<1, float, float>(diag, 0, (float *)inout_shared);
+  LoadUnique<1, float, float>(diag, 0, (float*)inout_shared);
   if (global_thread_idx < problem_size) {
-    ReadShared1<float>((float *)inout_shared, 0, r0);
+    ReadShared1<float>((float*)inout_shared, 0, r0);
   };
   __syncthreads();
   if (global_thread_idx < problem_size) {
@@ -32,23 +37,39 @@ __global__ void __launch_bounds__(1024, 1) OpenCVFocalAndExtraNormalizeKernel(
     r1 = r0 * r1;
     ReadIdx4<1024, float, float, float4>(precond_diag,
                                          0 * precond_diag_num_alloc,
-                                         global_thread_idx, r2, r3, r4, r5);
+                                         global_thread_idx,
+                                         r2,
+                                         r3,
+                                         r4,
+                                         r5);
     r6 = 1.00000000000000000e+00;
     r6 = r0 + r6;
     r5 = fmaf(r5, r6, r1);
     r0 = -1.00000000000000000e+00;
     ReadIdx4<1024, float, float, float4>(precond_tril,
                                          8 * precond_tril_num_alloc,
-                                         global_thread_idx, r7, r8, r9, r10);
+                                         global_thread_idx,
+                                         r7,
+                                         r8,
+                                         r9,
+                                         r10);
     ReadIdx4<1024, float, float, float4>(precond_tril,
                                          0 * precond_tril_num_alloc,
-                                         global_thread_idx, r11, r12, r13, r14);
+                                         global_thread_idx,
+                                         r11,
+                                         r12,
+                                         r13,
+                                         r14);
     r11 = r12 * r13;
     r2 = fmaf(r2, r6, r1);
     r2 = 1.0 / r2;
     ReadIdx4<1024, float, float, float4>(precond_tril,
                                          4 * precond_tril_num_alloc,
-                                         global_thread_idx, r15, r16, r17, r18);
+                                         global_thread_idx,
+                                         r15,
+                                         r16,
+                                         r17,
+                                         r18);
     r3 = fmaf(r3, r6, r1);
     r3 = 1.0 / r3;
     r19 = r17 * r3;
@@ -66,8 +87,8 @@ __global__ void __launch_bounds__(1024, 1) OpenCVFocalAndExtraNormalizeKernel(
     r17 = fmaf(r2, r11, r17);
     r5 = fmaf(r0, r17, r5);
     r5 = 1.0 / r5;
-    ReadIdx4<1024, float, float, float4>(njtr, 0 * njtr_num_alloc,
-                                         global_thread_idx, r17, r11, r8, r21);
+    ReadIdx4<1024, float, float, float4>(
+        njtr, 0 * njtr_num_alloc, global_thread_idx, r17, r11, r8, r21);
     r22 = r0 * r2;
     r23 = r17 * r22;
     r21 = fmaf(r13, r23, r21);
@@ -81,7 +102,10 @@ __global__ void __launch_bounds__(1024, 1) OpenCVFocalAndExtraNormalizeKernel(
     r21 = fmaf(r4, r25, r21);
     ReadIdx3<1024, float, float, float4>(precond_tril,
                                          12 * precond_tril_num_alloc,
-                                         global_thread_idx, r25, r24, r26);
+                                         global_thread_idx,
+                                         r25,
+                                         r24,
+                                         r26);
     r27 = r12 * r15;
     r28 = r16 * r7;
     r28 = fmaf(r3, r28, r2 * r27);
@@ -129,8 +153,8 @@ __global__ void __launch_bounds__(1024, 1) OpenCVFocalAndExtraNormalizeKernel(
     r10 = fmaf(r2, r27, r10);
     r29 = fmaf(r0, r10, r29);
     r29 = 1.0 / r29;
-    ReadIdx2<1024, float, float, float2>(njtr, 4 * njtr_num_alloc,
-                                         global_thread_idx, r10, r27);
+    ReadIdx2<1024, float, float, float2>(
+        njtr, 4 * njtr_num_alloc, global_thread_idx, r10, r27);
     r26 = r0 * r8;
     r26 = r26 * r32;
     r26 = fmaf(r20, r26, r10);
@@ -186,28 +210,45 @@ __global__ void __launch_bounds__(1024, 1) OpenCVFocalAndExtraNormalizeKernel(
     r4 = fmaf(r3, r29, r4);
     WriteIdx4<1024, float, float, float4>(out_normalized,
                                           0 * out_normalized_num_alloc,
-                                          global_thread_idx, r25, r4, r5, r24);
+                                          global_thread_idx,
+                                          r25,
+                                          r4,
+                                          r5,
+                                          r24);
     WriteIdx2<1024, float, float, float2>(out_normalized,
                                           4 * out_normalized_num_alloc,
-                                          global_thread_idx, r1, r31);
+                                          global_thread_idx,
+                                          r1,
+                                          r31);
   };
 }
 
-void OpenCVFocalAndExtraNormalize(
-    float *precond_diag, unsigned int precond_diag_num_alloc,
-    float *precond_tril, unsigned int precond_tril_num_alloc, float *njtr,
-    unsigned int njtr_num_alloc, const float *const diag, float *out_normalized,
-    unsigned int out_normalized_num_alloc, size_t problem_size) {
-
+void OpenCVFocalAndExtraNormalize(float* precond_diag,
+                                  unsigned int precond_diag_num_alloc,
+                                  float* precond_tril,
+                                  unsigned int precond_tril_num_alloc,
+                                  float* njtr,
+                                  unsigned int njtr_num_alloc,
+                                  const float* const diag,
+                                  float* out_normalized,
+                                  unsigned int out_normalized_num_alloc,
+                                  size_t problem_size) {
   if (problem_size == 0) {
     return;
   }
 
   const int n_blocks = (problem_size + 1024 - 1) / 1024;
   OpenCVFocalAndExtraNormalizeKernel<<<n_blocks, 1024>>>(
-      precond_diag, precond_diag_num_alloc, precond_tril,
-      precond_tril_num_alloc, njtr, njtr_num_alloc, diag, out_normalized,
-      out_normalized_num_alloc, problem_size);
+      precond_diag,
+      precond_diag_num_alloc,
+      precond_tril,
+      precond_tril_num_alloc,
+      njtr,
+      njtr_num_alloc,
+      diag,
+      out_normalized,
+      out_normalized_num_alloc,
+      problem_size);
 }
 
-} // namespace caspar
+}  // namespace caspar
