@@ -1,4 +1,3 @@
-=================================================================================
 Colmap with support for the OPENCV_FISHEYE camera model (fx, fy, cx, cy, k1, k2, k3, k4),
 when using the CASPAR backend.
 This fork is based on PR 4611.
@@ -11,9 +10,12 @@ I might add support for the following in the future:
 
 To get started:
 
-$ git clone -b caspar-opencv-fisheye https://github.com/ninobone-oz/colmap-caspar-opencv-fisheye.git
+```bash
+git clone -b caspar-opencv-fisheye https://github.com/ninobone-oz/colmap-caspar-opencv-fisheye.git
+```
 
 and follow the rest of the build and install instructions from source for colmap.
+
 =================================================================================
 
 COLMAP
